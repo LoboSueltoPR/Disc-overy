@@ -25,9 +25,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Manejar el login con Spotify
+// Reemplaza tu función de login con esta versión mejorada
 loginBtn.addEventListener('click', () => {
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&response_type=token&show_dialog=true`;
-    window.location.href = authUrl;
+    const authUrl = new URL('https://accounts.spotify.com/authorize');
+    authUrl.searchParams.append('client_id', clientId);
+    authUrl.searchParams.append('redirect_uri', redirectUri);
+    authUrl.searchParams.append('scope', scopes);
+    authUrl.searchParams.append('response_type', 'token');
+    authUrl.searchParams.append('show_dialog', 'true');
+    
+    console.log('Auth URL:', authUrl.toString()); // Para depuración
+    window.location.href = authUrl.toString();
 });
 
 // Manejar la generación de un álbum aleatorio
