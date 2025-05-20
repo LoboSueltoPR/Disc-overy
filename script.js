@@ -1,7 +1,7 @@
 // Configuración de la API de Spotify
-const clientId = 'e9485e0160964d3dbf9eac4cd36239be'; // REEMPLAZA CON TU CLIENT ID REAL
-const redirectUri = 'https://lobosueltopr.github.io/Disc-overy/';
-const scopes = 'user-top-read user-read-private user-read-email';
+const clientId = 'e9485e0160964d3dbf9eac4cd36239be';
+const redirectUri = encodeURIComponent('https://lobosueltopr.github.io/Disc-overy/');
+const scopes = encodeURIComponent('user-top-read user-read-private user-read-email');
 
 // Elementos del DOM
 const loginBtn = document.getElementById('login-btn');
@@ -24,62 +24,30 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuthStatus();
 });
 
-// Manejar el login con Spotify
+// Autenticación con Spotify
 loginBtn.addEventListener('click', () => {
-    const authUrl = new URL('https://accounts.spotify.com/authorize');
-    authUrl.searchParams.append('client_id', clientId);
-    authUrl.searchParams.append('redirect_uri', redirectUri);
-    authUrl.searchParams.append('scope', scopes);
-    authUrl.searchParams.append('response_type', 'token');
-    authUrl.searchParams.append('show_dialog', 'true');
-    
-    console.log('Auth URL:', authUrl.toString());
-    window.location.href = authUrl.toString();
-});
-
-// Manejar la generación de un álbum aleatorio
-generateBtn.addEventListener('click', async () => {
-    try {
-        showLoading();
-        const album = await getRandomAlbumBasedOnTaste();
-        displayAlbum(album);
-    } catch (error) {
-        console.error('Error al obtener el álbum:', error);
-        alert('Hubo un error al obtener el álbum. Por favor, intenta nuevamente.');
-    } finally {
-        hideLoading();
-    }
+    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes}&response_type=token&show_dialog=true`;
+    console.log('Redirigiendo a:', authUrl);
+    window.location.href = authUrl;
 });
 
 // Verificar estado de autenticación
 function checkAuthStatus() {
-    // Manejo mejorado del hash para GitHub Pages
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token')) {
-        try {
-            const params = new URLSearchParams(hash.substring(1));
-            const accessToken = params.get('access_token');
-            
-            if (accessToken) {
-                // Limpiar la URL sin recargar
-                window.history.replaceState({}, '', window.location.pathname);
-                
-                loginSection.classList.add('hidden');
-                appSection.classList.remove('hidden');
-                getUserProfile(accessToken);
-                return;
-            }
-        } catch (e) {
-            console.error('Error parsing hash:', e);
-        }
-    }
-    
-    // Intentar con token almacenado
-    const storedToken = localStorage.getItem('spotifyAccessToken');
-    if (storedToken) {
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('access_token');
+
+    if (accessToken) {
+        // Limpiar el hash de la URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
         loginSection.classList.add('hidden');
         appSection.classList.remove('hidden');
-        getUserProfile(storedToken);
+        getUserProfile(accessToken);
+    } else if (localStorage.getItem('spotifyAccessToken')) {
+        loginSection.classList.add('hidden');
+        appSection.classList.remove('hidden');
+        getUserProfile(localStorage.getItem('spotifyAccessToken'));
     }
 }
 
