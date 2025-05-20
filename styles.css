@@ -1,0 +1,212 @@
+:root {
+    --primary-color: #1DB954;
+    --dark-color: #191414;
+    --light-color: #FFFFFF;
+    --gray-color: #535353;
+    --light-gray: #B3B3B3;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Circular', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: var(--dark-color);
+    color: var(--light-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-top: 20px;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+header p {
+    color: var(--light-gray);
+    font-size: 1.1rem;
+}
+
+.btn {
+    background-color: var(--primary-color);
+    color: var(--light-color);
+    border: none;
+    border-radius: 500px;
+    padding: 12px 32px;
+    font-size: 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn:hover {
+    background-color: #1ed760;
+    transform: scale(1.05);
+}
+
+#login-section {
+    text-align: center;
+    margin: 40px 0;
+}
+
+#app-section {
+    text-align: center;
+    margin: 40px 0;
+    flex-grow: 1;
+}
+
+#user-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 30px;
+    gap: 15px;
+}
+
+#user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+#user-name {
+    font-weight: bold;
+}
+
+#result {
+    margin-top: 40px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    animation: fadeIn 0.5s ease;
+}
+
+#album-cover-container {
+    width: 250px;
+    height: 250px;
+    margin: 0 auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+#album-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+#album-info {
+    text-align: center;
+}
+
+#album-name {
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+}
+
+#artist-name {
+    font-size: 1.3rem;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+#album-year {
+    color: var(--light-gray);
+    margin-bottom: 20px;
+}
+
+#spotify-link {
+    margin-top: 20px;
+}
+
+.note {
+    color: var(--light-gray);
+    font-size: 0.9rem;
+    margin-top: 15px;
+}
+
+#loading {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 40px;
+    gap: 20px;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(29, 185, 84, 0.2);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+}
+
+footer {
+    text-align: center;
+    margin-top: auto;
+    padding: 20px 0;
+    color: var(--light-gray);
+    font-size: 0.9rem;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    #album-cover-container {
+        width: 200px;
+        height: 200px;
+    }
+    
+    #album-name {
+        font-size: 1.5rem;
+    }
+    
+    #artist-name {
+        font-size: 1.1rem;
+    }
+}
