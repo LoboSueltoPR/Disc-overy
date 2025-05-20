@@ -1,145 +1,239 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Descubridor de Discos</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #121212;
-      color: white;
-      text-align: center;
-      padding: 30px;
-    }
-
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin: 10px;
-      cursor: pointer;
-      background-color: #1db954;
-      color: white;
-      border: none;
-      border-radius: 4px;
-    }
-
-    img {
-      border-radius: 10px;
-      margin-top: 15px;
-    }
-
-    .item {
-      margin-bottom: 40px;
-    }
-
-    a {
-      color: #1db954;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Disc-overy - Spotify PKCE</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    max-width: 600px;
+  }
+  button {
+    padding: 10px 15px;
+    margin: 5px 0;
+    cursor: pointer;
+  }
+  #album-info img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin-top: 10px;
+  }
+</style>
 </head>
 <body>
-  <h1>🎧 Descubridor de Discos</h1>
+  <h1>Disc-overy</h1>
 
-  <div id="buttons">
-    <button onclick="login()">Iniciar sesión con Spotify</button>
-    <button onclick="showTopArtists()">🎤 Ver artistas favoritos</button>
-    <button onclick="showRecentlyPlayed()">🎵 Canciones recientes</button>
-    <button onclick="suggestAlbum()">🎲 Sugerir disco aleatorio</button>
-  </div>
+  <button id="login-btn">Iniciar sesión con Spotify</button>
+  <button id="logout-btn" style="display:none;">Cerrar sesión</button>
 
-  <div id="output"></div>
+  <section id="content" style="display:none;">
+    <h2>Artistas favoritos</h2>
+    <ul id="artists-list"></ul>
 
-  <script>
-    const clientId = 'e9485e0160964d3dbf9eac4cd36239be'; // ← Reemplazá con tu Client ID
-    const redirectUri = 'https://lobosueltopr.github.io/Disc-overy/'; // o donde esté tu app
+    <h2>Disco aleatorio para escuchar</h2>
+    <button id="random-album-btn">Mostrar disco aleatorio</button>
+    <div id="album-info"></div>
+  </section>
 
-    const scopes = [
-      'user-top-read',
-      'user-read-recently-played'
-    ];
+<script>
+const clientId = 'TU_CLIENT_ID_DE_SPOTIFY'; // reemplazá por tu clientId
+const redirectUri = window.location.origin + window.location.pathname; // URL actual sin query params
 
-    // Redirige a login de Spotify
-    function login() {
-      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes.join('%20')}&show_dialog=true`;
-      window.location = authUrl;
-    }
+const scopes = 'user-top-read user-read-private user-read-email';
 
-    // Obtiene token del hash
-    function getTokenFromUrl() {
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      return params.get('access_token');
-    }
+const generateRandomString = length => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let str = '';
+  for (let i = 0; i < length; i++) {
+    str += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return str;
+};
 
-    const token = getTokenFromUrl();
+const sha256 = async plain => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plain);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return new Uint8Array(hash);
+};
 
-    // Mostrar artistas favoritos
-    async function showTopArtists() {
-      const res = await fetch('https://api.spotify.com/v1/me/top/artists?limit=10', {
-        headers: { Authorization: 'Bearer ' + token }
-      });
-      const data = await res.json();
+const base64urlencode = arrayBuffer => {
+  let str = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+  return str.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
 
-      const output = document.getElementById('output');
-      output.innerHTML = '<h2>🎤 Tus artistas favoritos</h2>';
-      data.items.forEach(artist => {
-        output.innerHTML += `
-          <div class="item">
-            <h3>${artist.name}</h3>
-            <img src="${artist.images[0]?.url}" width="200" />
-            <p><a href="${artist.external_urls.spotify}" target="_blank">Ver en Spotify</a></p>
-          </div>
-        `;
-      });
-    }
+const pkceChallengeFromVerifier = async v => {
+  const hashed = await sha256(v);
+  return base64urlencode(hashed);
+};
 
-    // Mostrar canciones recientes
-    async function showRecentlyPlayed() {
-      const res = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=10', {
-        headers: { Authorization: 'Bearer ' + token }
-      });
-      const data = await res.json();
+const loginBtn = document.getElementById('login-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const artistsList = document.getElementById('artists-list');
+const content = document.getElementById('content');
+const randomAlbumBtn = document.getElementById('random-album-btn');
+const albumInfo = document.getElementById('album-info');
 
-      const output = document.getElementById('output');
-      output.innerHTML = '<h2>🎵 Canciones recientes</h2>';
-      data.items.forEach(item => {
-        const track = item.track;
-        output.innerHTML += `
-          <div class="item">
-            <h3>${track.name} - ${track.artists[0].name}</h3>
-            <img src="${track.album.images[0]?.url}" width="200" />
-            <p><a href="${track.external_urls.spotify}" target="_blank">Escuchar en Spotify</a></p>
-          </div>
-        `;
-      });
-    }
+let accessToken = null;
 
-    // Sugerir álbum aleatorio
-    async function suggestAlbum() {
-      const randomLetter = String.fromCharCode(97 + Math.floor(Math.random() * 26));
-      const res = await fetch(`https://api.spotify.com/v1/search?q=${randomLetter}&type=album&limit=50`, {
-        headers: { Authorization: 'Bearer ' + token }
-      });
-      const data = await res.json();
-      const albums = data.albums.items;
-      const randomAlbum = albums[Math.floor(Math.random() * albums.length)];
+const setSessionStorage = (key, value) => sessionStorage.setItem(key, value);
+const getSessionStorage = key => sessionStorage.getItem(key);
+const removeSessionStorage = key => sessionStorage.removeItem(key);
 
-      const output = document.getElementById('output');
-      output.innerHTML = `
-        <h2>🎲 Álbum recomendado</h2>
-        <div class="item">
-          <h3>${randomAlbum.name} - ${randomAlbum.artists[0].name}</h3>
-          <img src="${randomAlbum.images[0]?.url}" width="300" />
-          <p><a href="${randomAlbum.external_urls.spotify}" target="_blank">Escuchar en Spotify</a></p>
-        </div>
-      `;
-    }
-  </script>
+async function redirectToSpotifyAuth() {
+  const codeVerifier = generateRandomString(128);
+  const codeChallenge = await pkceChallengeFromVerifier(codeVerifier);
+
+  setSessionStorage('code_verifier', codeVerifier);
+
+  const url = new URL('https://accounts.spotify.com/authorize');
+  url.searchParams.append('client_id', clientId);
+  url.searchParams.append('response_type', 'code');
+  url.searchParams.append('redirect_uri', redirectUri);
+  url.searchParams.append('scope', scopes);
+  url.searchParams.append('code_challenge_method', 'S256');
+  url.searchParams.append('code_challenge', codeChallenge);
+
+  window.location = url.toString();
+}
+
+async function fetchAccessToken(code) {
+  const codeVerifier = getSessionStorage('code_verifier');
+
+  const body = new URLSearchParams({
+    client_id: clientId,
+    grant_type: 'authorization_code',
+    code: code,
+    redirect_uri: redirectUri,
+    code_verifier: codeVerifier,
+  });
+
+  const response = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    alert('Error obteniendo el token');
+    console.error(await response.text());
+    return null;
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+async function getUserTopArtists(token) {
+  const res = await fetch('https://api.spotify.com/v1/me/top/artists?limit=10', {
+    headers: { Authorization: 'Bearer ' + token },
+  });
+  if (!res.ok) {
+    alert('Error cargando artistas');
+    return [];
+  }
+  const data = await res.json();
+  return data.items;
+}
+
+async function getRandomAlbum(token) {
+  const artists = await getUserTopArtists(token);
+  if (artists.length === 0) return null;
+
+  const artist = artists[Math.floor(Math.random() * artists.length)];
+
+  const res = await fetch(`https://api.spotify.com/v1/artists/${artist.id}/albums?include_groups=album&limit=50`, {
+    headers: { Authorization: 'Bearer ' + token },
+  });
+  if (!res.ok) return null;
+
+  const albums = (await res.json()).items;
+  if (albums.length === 0) return null;
+
+  const album = albums[Math.floor(Math.random() * albums.length)];
+  return album;
+}
+
+function showArtists(artists) {
+  artistsList.innerHTML = '';
+  artists.forEach(a => {
+    const li = document.createElement('li');
+    li.textContent = a.name;
+    artistsList.appendChild(li);
+  });
+}
+
+function showAlbum(album) {
+  if (!album) {
+    albumInfo.innerHTML = '<p>No se encontró álbum.</p>';
+    return;
+  }
+  albumInfo.innerHTML = `
+    <h3>${album.name}</h3>
+    <p>Por ${album.artists.map(a => a.name).join(', ')}</p>
+    <img src="${album.images[0]?.url || ''}" alt="Portada álbum" />
+    <a href="${album.external_urls.spotify}" target="_blank" rel="noopener noreferrer">Escuchar en Spotify</a>
+  `;
+}
+
+async function handleRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+
+  if (!code) return;
+
+  const tokenData = await fetchAccessToken(code);
+  if (!tokenData) return;
+
+  accessToken = tokenData.access_token;
+  sessionStorage.setItem('access_token', accessToken);
+
+  // Limpio query params
+  window.history.replaceState({}, document.title, redirectUri);
+
+  showContent();
+}
+
+async function showContent() {
+  accessToken = sessionStorage.getItem('access_token');
+  if (!accessToken) {
+    loginBtn.style.display = 'block';
+    logoutBtn.style.display = 'none';
+    content.style.display = 'none';
+    return;
+  }
+
+  loginBtn.style.display = 'none';
+  logoutBtn.style.display = 'block';
+  content.style.display = 'block';
+
+  const artists = await getUserTopArtists(accessToken);
+  showArtists(artists);
+}
+
+loginBtn.addEventListener('click', () => {
+  redirectToSpotifyAuth();
+});
+
+logoutBtn.addEventListener('click', () => {
+  sessionStorage.clear();
+  location.reload();
+});
+
+randomAlbumBtn.addEventListener('click', async () => {
+  const album = await getRandomAlbum(accessToken);
+  showAlbum(album);
+});
+
+window.onload = () => {
+  handleRedirect();
+  showContent();
+};
+</script>
 </body>
 </html>
