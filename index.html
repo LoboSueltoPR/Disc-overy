@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Descubridor de Discos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+      text-align: center;
+      padding: 30px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+      background-color: #1db954;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+
+    img {
+      border-radius: 10px;
+      margin-top: 15px;
+    }
+
+    .item {
+      margin-bottom: 40px;
+    }
+
+    a {
+      color: #1db954;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎧 Descubridor de Discos</h1>
+
+  <div id="buttons">
+    <button onclick="login()">Iniciar sesión con Spotify</button>
+    <button onclick="showTopArtists()">🎤 Ver artistas favoritos</button>
+    <button onclick="showRecentlyPlayed()">🎵 Canciones recientes</button>
+    <button onclick="suggestAlbum()">🎲 Sugerir disco aleatorio</button>
+  </div>
+
+  <div id="output"></div>
+
+  <script>
+    const clientId = 'e9485e0160964d3dbf9eac4cd36239be'; // ← Reemplazá con tu Client ID
+    const redirectUri = 'https://lobosueltopr.github.io/Disc-overy/'; // o donde esté tu app
+
+    const scopes = [
+      'user-top-read',
+      'user-read-recently-played'
+    ];
+
+    // Redirige a login de Spotify
+    function login() {
+      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes.join('%20')}&show_dialog=true`;
+      window.location = authUrl;
+    }
+
+    // Obtiene token del hash
+    function getTokenFromUrl() {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      return params.get('access_token');
+    }
+
+    const token = getTokenFromUrl();
+
+    // Mostrar artistas favoritos
+    async function showTopArtists() {
+      const res = await fetch('https://api.spotify.com/v1/me/top/artists?limit=10', {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      const data = await res.json();
+
+      const output = document.getElementById('output');
+      output.innerHTML = '<h2>🎤 Tus artistas favoritos</h2>';
+      data.items.forEach(artist => {
+        output.innerHTML += `
+          <div class="item">
+            <h3>${artist.name}</h3>
+            <img src="${artist.images[0]?.url}" width="200" />
+            <p><a href="${artist.external_urls.spotify}" target="_blank">Ver en Spotify</a></p>
+          </div>
+        `;
+      });
+    }
+
+    // Mostrar canciones recientes
+    async function showRecentlyPlayed() {
+      const res = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=10', {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      const data = await res.json();
+
+      const output = document.getElementById('output');
+      output.innerHTML = '<h2>🎵 Canciones recientes</h2>';
+      data.items.forEach(item => {
+        const track = item.track;
+        output.innerHTML += `
+          <div class="item">
+            <h3>${track.name} - ${track.artists[0].name}</h3>
+            <img src="${track.album.images[0]?.url}" width="200" />
+            <p><a href="${track.external_urls.spotify}" target="_blank">Escuchar en Spotify</a></p>
+          </div>
+        `;
+      });
+    }
+
+    // Sugerir álbum aleatorio
+    async function suggestAlbum() {
+      const randomLetter = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+      const res = await fetch(`https://api.spotify.com/v1/search?q=${randomLetter}&type=album&limit=50`, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      const data = await res.json();
+      const albums = data.albums.items;
+      const randomAlbum = albums[Math.floor(Math.random() * albums.length)];
+
+      const output = document.getElementById('output');
+      output.innerHTML = `
+        <h2>🎲 Álbum recomendado</h2>
+        <div class="item">
+          <h3>${randomAlbum.name} - ${randomAlbum.artists[0].name}</h3>
+          <img src="${randomAlbum.images[0]?.url}" width="300" />
+          <p><a href="${randomAlbum.external_urls.spotify}" target="_blank">Escuchar en Spotify</a></p>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
